@@ -1,0 +1,10 @@
+*.tgz
+*.phar
+*.phar.asc
+php_version_tags.php
+behat.yml
+vendor
+composer.lock
+
+# Virtual Studio Code
+.history
