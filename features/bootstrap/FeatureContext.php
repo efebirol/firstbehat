@@ -1,14 +1,15 @@
 <?php
 
 use Behat\Behat\Context\Context;
-use Behat\Gherkin\Node\PyStringNode;
-use Behat\Gherkin\Node\TableNode;
 
 /**
  * Defines application features from the specific context.
  */
 class FeatureContext implements Context
 {
+
+    protected $response = null;
+
     /**
      * Initializes context.
      *
@@ -35,7 +36,9 @@ class FeatureContext implements Context
      */
     public function iSearchForBehat()
     {
-        return true;
+        //simuliere einen HTTP Request (hier: zum Github, siehe Browser https://api.github.com/search/repositories?q=behat)
+        $client = new GuzzleHttp\Client(['base_uri' => 'https://api.github.com']);
+        $this->response = $client->get('/search/repositories?q=behat'); //searching for "behat" in Github Repositories
     }
 
     /**
@@ -43,6 +46,10 @@ class FeatureContext implements Context
      */
     public function iGetAResult()
     {
-        return true;
-    }    
+        $response_code = $this->response->getStatusCode();
+        print("Status Code: " . $response_code);
+        if ($response_code != 200) {
+            throw new Exception("Habe keine gültigen HTTP Status Code (200) von Webseite erhalten");
+        }
+    }
 }

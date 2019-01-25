@@ -1,5 +1,6 @@
 {
     "require": {
-        "behat/behat": "3.*"
+        "behat/behat": "3.*",
+        "guzzlehttp/guzzle": "6.*"
     }
 }
