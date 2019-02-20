@@ -68,11 +68,27 @@ class FeatureContext implements Context
         if($data['total_count'] == 0){
             throw new Exception("Found zero results in search!");
         }
-        
     }
 
     /**
-     * @Then I get a response code with status :status
+     * @Then I get no result
+     */
+    public function iGetNoResult()
+    {
+        $response_code = $this->response->getStatusCode();
+        print("Status Code: " . $response_code);
+        if ($response_code != 200) {
+            throw new Exception("Habe keine gültigen HTTP Status Code (200) von Webseite erhalten. Response Code ist: " , $response_code);
+        }
+        $data = json_decode($this->response->getBody(), true);
+        
+        if($data['total_count'] != 0){
+            throw new Exception("I should find no result with this search!");
+        }
+    }
+
+    /**
+     * @Then I except a response code with status :status
      */
     public function iGetAResponseCode($status)
     {
@@ -80,6 +96,18 @@ class FeatureContext implements Context
         print("Status Code: " . $response_code);
         if ($response_code != $status) {
             throw new Exception("Habe keine gültigen HTTP Status Code (200) von Webseite erhalten. Response Code ist: " , $response_code);
+        }
+    }
+
+    /**
+     * @Then I except at least :numberResult result
+     */
+    public function iGetAtLeastResult($numberResult)
+    {
+        $data = json_decode($this->response->getBody(), true);
+        
+        if($data['total_count'] <= $numberResult){
+            throw new Exception("Es sollte mindestens ".$numberResult." gefunden werden.");
         }
     }
 }
