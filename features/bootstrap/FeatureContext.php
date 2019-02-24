@@ -1,14 +1,19 @@
 <?php
 
-use Behat\Behat\Context\Context;
+use Behat\Behat\Context\SnippetAcceptingContext;
+
+
 
 /**
  * Defines application features from the specific context.
  */
-class FeatureContext implements Context
+class FeatureContext implements SnippetAcceptingContext 
 {
 
     protected $response = null;
+    protected $username = null;
+    protected $password = null;
+
 
     /**
      * Initializes context.
@@ -17,8 +22,10 @@ class FeatureContext implements Context
      * You can also pass arbitrary arguments to the
      * context constructor through behat.yml.
      */
-    public function __construct()
+    public function __construct($username, $password)
     {
+        $this->$username = $username;
+        $this->$password = $password;
     }
 
     // FeatureContext hat fehlende Schritte . Definiere diese mit den folgenden Snippets :
@@ -110,4 +117,39 @@ class FeatureContext implements Context
             throw new Exception("Es sollte mindestens ".$numberResult." gefunden werden.");
         }
     }
+
+
+    /** Authentifizierung**/
+    
+    /**
+     * @Given I am an authenticated user
+     */
+    public function iAmAnAuthenticatedUser()
+    {
+        $client = new GuzzleHttp\Client([
+            'base_uri' => 'https://api.github.com',
+            'auth' => [$this->username, $this->password]
+        ]);
+            $response = $client->get("/");
+            if(200 != $response->getStatusCode()){
+                throw new Exception("Authentifierzierung hat nicht funktioniert. Status code: ". $response->getStatusCode());
+            }
+    }
+
+    /**
+     * @When I request a list of my repositories
+     */
+    public function iRequestAListOfMyRepositories()
+    {
+        throw new Exception();
+    }
+
+    /**
+     * @Then I get a response with repository names
+     */
+    public function iGetAResponseWithRepositoryNames()
+    {
+        throw new Exception();
+    }
+
 }
