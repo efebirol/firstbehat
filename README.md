@@ -27,3 +27,10 @@ After that you will be able to run development version of Behat via:
 ```bash
 $> bin/behat
 ```
+
+Run behat test
+---------------
+
+```bash
+$> venor/bin/behat
+```

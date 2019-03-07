@@ -1,7 +1,7 @@
 @api @login
 
-Feature: Give user a list of repositores when logged in
-    Scenario: Scenario name
+Feature: Get my repositories
+  Scenario: I want a list of my repositories
     Given I am an authenticated user
-    When I request a list of my repositories 
-    Then I get a response with repository names
+    When I request a list of my repositories
+    Then The results should include a repostory name "swapi"

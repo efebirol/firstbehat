@@ -13,6 +13,8 @@ class FeatureContext implements SnippetAcceptingContext
     protected $response = null;
     protected $username = null;
     protected $password = null;
+    protected $client = null;
+
 
 
     /**
@@ -22,10 +24,10 @@ class FeatureContext implements SnippetAcceptingContext
      * You can also pass arbitrary arguments to the
      * context constructor through behat.yml.
      */
-    public function __construct($username, $password)
+    public function __construct($github_username, $github_password)
     {
-        $this->$username = $username;
-        $this->$password = $password;
+        $this->username = $github_username;
+        $this->password = $github_password;
     }
 
     // FeatureContext hat fehlende Schritte . Definiere diese mit den folgenden Snippets :
@@ -44,8 +46,8 @@ class FeatureContext implements SnippetAcceptingContext
     public function iSearchForBehat()
     {
         //simuliere einen HTTP Request (hier: zum Github, siehe Browser https://api.github.com/search/repositories?q=behat)
-        $client = new GuzzleHttp\Client(['base_uri' => 'https://api.github.com']);
-        $this->response = $client->get('/search/repositories?q=behat'); //searching for "behat" in Github Repositories
+        $this->client = new GuzzleHttp\Client(['base_uri' => 'https://api.github.com']);
+        $this->response = $this->client->get('/search/repositories?q=behat'); //searching for "behat" in Github Repositories
     }
 
     /**
@@ -54,8 +56,8 @@ class FeatureContext implements SnippetAcceptingContext
     public function iSearchForBehatWithPath($urlpath)
     {
         //simuliere einen HTTP Request (hier: zum Github, siehe Browser https://api.github.com/search/repositories?q=behat)
-        $client = new GuzzleHttp\Client(['base_uri' => 'https://api.github.com']);
-        $this->response = $client->get($urlpath); //searching for "behat" in Github Repositories
+        $this->client = new GuzzleHttp\Client(['base_uri' => 'https://api.github.com']);
+        $this->response = $this->client->get($urlpath); //searching for "behat" in Github Repositories
         echo "URL ist: ", $urlpath;
     }
 
@@ -121,19 +123,23 @@ class FeatureContext implements SnippetAcceptingContext
 
     /** Authentifizierung**/
     
-    /**
+   /**
      * @Given I am an authenticated user
      */
     public function iAmAnAuthenticatedUser()
     {
-        $client = new GuzzleHttp\Client([
-            'base_uri' => 'https://api.github.com',
-            'auth' => [$this->username, $this->password]
-        ]);
-            $response = $client->get("/");
-            if(200 != $response->getStatusCode()){
-                throw new Exception("Authentifierzierung hat nicht funktioniert. Status code: ". $response->getStatusCode());
-            }
+        $this->client = new GuzzleHttp\Client(
+            [
+                'base_uri' => 'https://api.github.com',
+                'auth' => [$this->username, $this->password]
+            ]
+        );
+        echo "Login mit user: ".$this->username." und password: ".$this->password;
+        $response = $this->client->get('/');
+
+        if (200 != $response->getStatusCode()) {
+            throw new Exception("Authentication didn't work!");
+        }
     }
 
     /**
@@ -141,15 +147,28 @@ class FeatureContext implements SnippetAcceptingContext
      */
     public function iRequestAListOfMyRepositories()
     {
-        throw new Exception();
+        $this->response = $this->client->get('/user/repos');
+
+        if (200 != $this->response->getStatusCode()) {
+            throw new Exception("Authentication didn't work!");
+        }
     }
 
     /**
-     * @Then I get a response with repository names
+     * @Then The results should include a repostory name :arg1
      */
-    public function iGetAResponseWithRepositoryNames()
+    public function theResultsShouldIncludeARepostoryName($arg1)
     {
-        throw new Exception();
+        $repositories = json_decode($this->response->getBody(), true);
+
+        foreach($repositories as $repository) {
+            echo "\nName der entfernten Repo: ".$repository['name'];
+            if ($repository['name'] == $arg1) {
+                return true;
+            }
+        }
+
+        throw new Exception("Expected to find a repository named '$arg1' but didn't.");
     }
 
 }
