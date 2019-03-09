@@ -33,10 +33,10 @@ class FeatureContext implements SnippetAcceptingContext
     /**
      * @Then I except a response code with status :status
      */
-    public function iGetAResponseCode($status)
+    public function iExpectAResponseCode($status)
     {
         $response_code = $this->response->getStatusCode();
-        print("Status Code: " . $response_code);
+        print("\nStatus Code: " . $response_code);
         if ($response_code != $status) {
             throw new Exception("Habe keine gültigen HTTP Status Code (200) von Webseite erhalten. Response Code ist: ", $response_code);
         }
@@ -86,7 +86,7 @@ class FeatureContext implements SnippetAcceptingContext
         $response_code = $this->response->getStatusCode();
         print("Status Code: " . $response_code);
 
-        $this->iGetAResponseCode(200);
+        $this->iExpectAResponseCode(200);
 
         $data = $this->getBodyAsJson();
 
@@ -102,7 +102,7 @@ class FeatureContext implements SnippetAcceptingContext
     {
         $response_code = $this->response->getStatusCode();
         print("Status Code: " . $response_code);
-        $this->iGetAResponseCode(200);
+        $this->iExpectAResponseCode(200);
 
         $data = $this->getBodyAsJson();
 
@@ -137,11 +137,11 @@ class FeatureContext implements SnippetAcceptingContext
                 'auth' => [$this->username, $this->password]
             ]
         );
-        echo "Login mit user: " . $this->username . " und password: " . $this->password."\n";
+        echo "Login mit user: " . $this->username . " und password: " . $this->password . "\n";
         $this->response = $this->client->get('/');
 
         $response_code = $this->response->getStatusCode();
-        $this->iGetAResponseCode(200);
+        $this->iExpectAResponseCode(200);
     }
 
     /**
@@ -151,7 +151,7 @@ class FeatureContext implements SnippetAcceptingContext
     {
         $this->response = $this->client->get('/user/repos');
         $response_code = $this->response->getStatusCode();
-        $this->iGetAResponseCode(200);
+        $this->iExpectAResponseCode(200);
     }
 
     /**
@@ -172,21 +172,85 @@ class FeatureContext implements SnippetAcceptingContext
     }
 
     /**
-     * @When I create a the :arg1 repository
+     * @When I create the :arg1 repository
      */
-    public function iCreateATheRepository($arg1)
+    public function iCreateTheRepository($arg1)
     {
         echo "Versuche die Repo zu erzeugen: " . $arg1;
-
-        $this->iRequestAListOfMyRepositories();
-        if($this->theResultsShouldIncludeARepostoryName($arg1) == true){
-            throw new Exception("Eine Repository mit dem Namen existiert schon");
-        }
-
         $parameters = json_encode(['name' => $arg1]);
         $this->client->post('/user/repos', ['body' => $parameters]);
+        $this->iExpectAResponseCode(200);
 
-        $this->iGetAResponseCode(200);
+        //prüfe ob die Repo schon existiert
+        $this->iRequestAListOfMyRepositories();
+        $this->theResultsShouldIncludeARepostoryName($arg1);
+    }
 
+    /**
+     * @Given I have a repository called :arg1
+     */
+    public function iHaveARepositoryCalled($arg1)
+    {
+        //hole mir alle Repos
+        $this->response = $this->client->get('/user/repos');
+        $response_code = $this->response->getStatusCode();
+        $this->iExpectAResponseCode(200);
+
+        //suche nach dem Names der Repositories
+        $repositories = $this->getBodyAsJson();
+
+        foreach ($repositories as $repository) {
+            echo "\nName der entfernten Repo: " . $repository['name'];
+            if ($repository['name'] == $arg1) {
+                return true;
+            }
+        }
+    }
+
+    /**
+     * @When I watch the :arg1 repository
+     * Quelle: sehe https://developer.github.com/v3/activity/watching/#set-a-repository-subscription
+     *  für Infos wie man sich als Watcher für eine Repository hinzufügt
+     */
+    public function iWatchTheRepository($arg1)
+    {
+        $watch_url = '/repos/' . $this->username . '/' . $arg1 . '/subscription';
+        $parameters = json_encode(['subscribed' => 'true']);
+
+        $this->client->put($watch_url, ['body' => $parameters]);
+    }
+
+
+    /**
+     * @Then The :arg1 repository will list me as a watcher
+     */
+    public function theRepositoryWillListMeAsAWatcher($arg1)
+    {
+        $watch_url = '/repos/' . $this->username . '/' . $arg1 . '/subscribers';
+        $this->response = $this->client->get($watch_url);
+
+        $subscribers = $this->getBodyAsJson();
+
+        foreach ($subscribers as $subscriber) {
+            if ($subscriber['login'] == $this->username) {
+                return true;
+            }
+        }
+
+        throw new Exception("Did not find '{$this->username}' as a watcher as expected.");
+    }
+
+    /**
+     * @Then I delete the repository called :arg1
+     */
+    public function iDeleteTheRepositoryCalled($arg1)
+    {
+        $delete = '/repos/' . $this->username . '/' . $arg1;
+        $this->response = $this->client->delete($delete);
+
+        echo "x1:".$this->response->getStatusCode();
+
+        //Response liefert ein 204 ("no content"), da Repository gelöscht wurde
+        $this->iExpectAResponseCode(204);
     }
 }
