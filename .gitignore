@@ -2,9 +2,9 @@
 *.phar
 *.phar.asc
 php_version_tags.php
-behat.yml
+# behat.yml
 vendor
 composer.lock
 
-# Virtual Studio Code
+## Virtual Studio Code
 .history
