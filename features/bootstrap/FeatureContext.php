@@ -1,6 +1,7 @@
 <?php
 
 use Behat\Behat\Context\SnippetAcceptingContext;
+use Symfony\Component\Config\Definition\Exception\Exception;
 
 
 
@@ -84,7 +85,7 @@ class FeatureContext implements SnippetAcceptingContext
     {
         $response_code = $this->response->getStatusCode();
         print("Status Code: " . $response_code);
-        
+
         $this->iGetAResponseCode(200);
 
         $data = $this->getBodyAsJson();
@@ -136,7 +137,7 @@ class FeatureContext implements SnippetAcceptingContext
                 'auth' => [$this->username, $this->password]
             ]
         );
-        echo "Login mit user: " . $this->username . " und password: " . $this->password;
+        echo "Login mit user: " . $this->username . " und password: " . $this->password."\n";
         $this->response = $this->client->get('/');
 
         $response_code = $this->response->getStatusCode();
@@ -158,7 +159,7 @@ class FeatureContext implements SnippetAcceptingContext
      */
     public function theResultsShouldIncludeARepostoryName($arg1)
     {
-         $repositories = $this->getBodyAsJson();
+        $repositories = $this->getBodyAsJson();
 
         foreach ($repositories as $repository) {
             echo "\nName der entfernten Repo: " . $repository['name'];
@@ -168,5 +169,24 @@ class FeatureContext implements SnippetAcceptingContext
         }
 
         throw new Exception("Expected to find a repository named '$arg1' but didn't.");
+    }
+
+    /**
+     * @When I create a the :arg1 repository
+     */
+    public function iCreateATheRepository($arg1)
+    {
+        echo "Versuche die Repo zu erzeugen: " . $arg1;
+
+        $this->iRequestAListOfMyRepositories();
+        if($this->theResultsShouldIncludeARepostoryName($arg1) == true){
+            throw new Exception("Eine Repository mit dem Namen existiert schon");
+        }
+
+        $parameters = json_encode(['name' => $arg1]);
+        $this->client->post('/user/repos', ['body' => $parameters]);
+
+        $this->iGetAResponseCode(200);
+
     }
 }
