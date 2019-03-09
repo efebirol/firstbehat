@@ -47,6 +47,22 @@ class FeatureContext implements SnippetAcceptingContext
         return json_decode($this->response->getBody(), true);
     }
 
+    protected function iExpectASuccessfulRequest()
+    {
+        $response_code = $this->response->getStatusCode();
+        if ('2' != substr($response_code, 0, 1)) {
+            throw new Exception("We expected a successful request but received a $response_code instead!");
+        }
+    }
+
+    protected function iExpectAFailedRequest()
+    {
+        $response_code = $this->response->getStatusCode();
+        if ('4' != substr($response_code, 0, 1)) {
+            throw new Exception("We expected a failed request but received a $response_code instead!");
+        }
+    }
+
     /** Test Funktionen */
     /**
      * @Given I am an anonymous user
@@ -253,4 +269,5 @@ class FeatureContext implements SnippetAcceptingContext
         //Response liefert ein 204 ("no content"), da Repository gelöscht wurde
         $this->iExpectAResponseCode(204);
     }
+    
 }
