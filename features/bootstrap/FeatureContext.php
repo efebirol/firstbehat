@@ -2,7 +2,7 @@
 
 use Behat\Behat\Context\SnippetAcceptingContext;
 use Symfony\Component\Config\Definition\Exception\Exception;
-
+use Behat\Gherkin\Node\TableNode;
 
 
 /**
